@@ -9,6 +9,7 @@ if src_path not in sys.path:
 
 from google.cloud import storage, bigquery
 from google.api_core import exceptions
+from google.auth.exceptions import DefaultCredentialsError
 from utils import config_loader as cl
 
 def create_gcs_buckets(project_id, location="US"):
@@ -16,7 +17,27 @@ def create_gcs_buckets(project_id, location="US"):
     Creates the required GCS buckets for the project lifecycle.
     It reads the bucket names from the configuration file.
     """
-    client = storage.Client(project=project_id)
+    try:
+        client = storage.Client(project=project_id)
+    except DefaultCredentialsError as exc:
+        print("❌ Credentials not found.")
+        
+        # Debugging Service Account Key issues
+        sa_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+        if sa_path:
+            print(f"   - GOOGLE_APPLICATION_CREDENTIALS found: {sa_path}")
+            if not os.path.exists(sa_path):
+                print(f"   - ⚠️ Error: The file '{sa_path}' does not exist. Check the path.")
+        else:
+            print("   - GOOGLE_APPLICATION_CREDENTIALS environment variable is NOT set.")
+
+        print("   - If in Colab: Run 'from google.colab import auth; auth.authenticate_user()'")
+        print("   - If local: Run 'gcloud auth application-default login'")
+        print(f"   - Error: {exc}")
+        return
+    except Exception as e:
+        print(f"❌ Failed to initialize GCS Client: {e}")
+        return
     
     # Use the constants from the config_loader to get the keys
     bucket_keys = [
@@ -51,7 +72,24 @@ def create_bigquery_dataset(project_id, location="US"):
     Creates the BigQuery dataset if it does not already exist.
     It reads the dataset name from the configuration file.
     """
-    client = bigquery.Client(project=project_id)
+    try:
+        client = bigquery.Client(project=project_id)
+    except DefaultCredentialsError as exc:
+        print("❌ Credentials not found.")
+        
+        sa_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+        if sa_path:
+            print(f"   - GOOGLE_APPLICATION_CREDENTIALS found: {sa_path}")
+            if not os.path.exists(sa_path):
+                print(f"   - ⚠️ Error: The file '{sa_path}' does not exist.")
+
+        print("   - If in Colab: Run 'from google.colab import auth; auth.authenticate_user()'")
+        print("   - If local: Run 'gcloud auth application-default login'")
+        print(f"   - Error: {exc}")
+        return
+    except Exception as e:
+        print(f"❌ Failed to initialize BigQuery Client: {e}")
+        return
     
     dataset_name = cl.config_loader.get(cl.BQ_DATASET)
     if not dataset_name:

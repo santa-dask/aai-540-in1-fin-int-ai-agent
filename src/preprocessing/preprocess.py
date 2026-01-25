@@ -19,7 +19,8 @@ def preprocess_raw_to_staging(project_id, dataset_id, bucket_name):
     bpd.options.bigquery.location = "US"
 
     # 1. Point to the Raw CSV in the Data Lake (Bronze Layer)
-    gcs_uri = f"gs://{bucket_name}/raw/complaints*.csv"
+    gcs_uri = f"gs://{bucket_name}/raw/complaints1.csv"
+    print(f" GCS RAW File Location: {gcs_uri}")
     
     # Create a BigQuery DataFrame directly from the GCS external file
     # This acts as an 'External Table'—no data is moved yet.
@@ -27,12 +28,12 @@ def preprocess_raw_to_staging(project_id, dataset_id, bucket_name):
 
     # 2. Preprocessing Work (Pandas-style)
     # Example: Selecting relevant columns and handling nulls
-    columns_to_keep = ['date_received', 'product', 'issue', 'complaint_what_happened', 'zip_code']
-    df_clean = df[columns_to_keep].dropna(subset=['complaint_what_happened'])
-
+    #columns_to_keep = ['date_received', 'product', 'issue', 'complaint_what_happened', 'zip_code']
+    #df_clean = df[columns_to_keep].dropna(subset=['complaint_what_happened'])
+    df_clean = df
     # Example: De-identification 
     # Redact ZIP codes to prevent them acting as geographic proxies
-    df_clean['zip_code'] = df_clean['zip_code'].str.slice(0, 3) + "XX"
+    #df_clean['zip_code'] = df_clean['zip_code'].str.slice(0, 3) + "XX"
 
     # 3. Save to the Staging Table
     # This materializes the preprocessed data into a BigQuery native table
