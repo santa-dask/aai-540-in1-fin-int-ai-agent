@@ -1,0 +1,27 @@
+# GCP Client Libraries
+google-cloud-storage
+google-cloud-bigquery
+google-cloud-aiplatform
+bigframes
+# google-cloud-dataflow
+google-cloud-dlp
+
+# LLM & Training (PEFT / QLoRA)
+transformers>=4.49.0
+peft
+bitsandbytes
+accelerate
+datasets
+torch
+
+# Explainability & Evaluation
+shap
+evaluate
+scikit-learn
+pandas
+pyarrow
+
+# Utilities
+pyyaml
+tqdm
+python-dotenv

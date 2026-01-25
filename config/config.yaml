@@ -1,0 +1,69 @@
+# ==========================================
+# Financial Intelligence Agent - Global Config
+# ==========================================
+
+project:
+  id: ""
+  region: "us-central1"
+  env: "development" # [development, staging, production]
+
+# 1. Data Ingestion & Engineering
+data:
+  raw_bucket: "cfpb-raw-lake"
+  clean_bucket: "cfpb-clean-features"
+  weights_bucket: "cfpb-weights-registry"
+  raw_file_path: "data/complaints1.csv"
+  cfpb_api_url: "https://www.consumerfinance.gov/data-research/consumer-complaints/search/api/v1/"
+  narrative_field: "complaint_what_happened"
+  min_narrative_length: 50
+  max_narrative_length: 128000  # Leveraging Gemma 3's context window
+  test_split: 0.1
+  val_split: 0.1
+
+storage:
+  lake_bucket: "cfpb-data-lake"
+  zones:
+    raw: "raw/complaints.csv"
+    staging: "staging/cleaned_complaints.parquet"
+    warehouse: "warehouse/final_insights/"
+
+bigquery:
+  dataset: "cfpb_analysis"
+  tables:
+    complaints_raw: "stg_complaints"
+    complaints_gold: "fact_root_cause_intelligence"
+
+# 2. Model Architecture & Training
+model:
+  base_id: "google/gemma-3-4b-it"
+  adapter_path: "gemma3-weights-registry/adapters/v1"
+  context_window: 128000
+  rope_base: 1000000            # Adjusted for 128k context stability
+
+# 3. Fine-Tuning Hyperparameters (QLoRA)
+training:
+  stages: ["CPT", "SFT", "RL"]
+  compute_dtype: "bfloat16"     # Use float16 if not on Ampere/L4
+  quantization: "4bit"          # [4bit, 8bit, none]
+  lora:
+    r: 32                       # Rank
+    alpha: 64                   # Alpha
+    dropout: 0.05
+    target_modules: ["q_proj", "v_proj", "k_proj", "o_proj"]
+  hyperparams:
+    batch_size: 4
+    learning_rate: 5e-5
+    epochs: 3
+    warmup_ratio: 0.1
+
+# 4. Infrastructure & MLOps
+infrastructure:
+  machine_type: "g2-standard-8" # 1x NVIDIA L4 GPU
+  accelerator_count: 1
+  service_account: "will_be_creted_in_future@project.iam.gserviceaccount.com"
+
+# 5. Monitoring & Fairness
+monitoring:
+  skew_threshold: 0.05
+  drift_threshold: 0.01
+  fairness_slices: ["state", "product", "submitted_via"]
