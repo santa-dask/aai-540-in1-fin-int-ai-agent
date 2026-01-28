@@ -1,0 +1,27 @@
+name: finint
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - numpy
+  - pandas
+  - pyarrow
+  - scikit-learn
+  - matplotlib
+  - seaborn
+  - jupyterlab
+  - ipykernel
+  - pip:
+      - google-cloud-storage
+      - google-cloud-bigquery
+      - google-cloud-bigquery-storage
+      - google-cloud-aiplatform
+      - fastparquet
+      - tqdm
+      - python-dotenv
+      - db-dtypes
+      - great-expectations
+      - typer
+      - rich
+
