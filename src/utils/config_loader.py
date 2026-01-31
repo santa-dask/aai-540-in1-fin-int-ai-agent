@@ -16,6 +16,11 @@ RAW_BUCKET='data.raw_bucket'
 CLEAN_BUCKET='data.clean_bucket'
 WEIGHTS_BUCKET='data.weights_bucket'
 RAW_FILE_PATH='data.raw_file_path'
+TRAINING_FILE_PATH='data.training_file_path'
+TEST_FILE_PATH='data.testing_file_path'
+SAMPLED_FILE_PATH='data.sample_file_path'
+MODEL_ID = "model.base_id"
+HF_TOKEN = "model.hf_token"
 
 
 

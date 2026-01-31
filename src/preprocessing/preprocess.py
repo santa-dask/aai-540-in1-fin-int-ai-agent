@@ -1,6 +1,7 @@
 
 import sys
 import os
+import pandas as pd
 
 # Add the 'src' directory to the system path to allow for absolute imports.
 # This is necessary so that this script can find the 'utils' module.
@@ -41,6 +42,25 @@ def preprocess_raw_to_staging(project_id, dataset_id, bucket_name):
     df_clean.to_gbq(staging_table_id, if_exists="replace")
     
     print(f"✅ Preprocessing complete. Staging table created: {staging_table_id}")
+
+def preprocess_data(config):
+    complaints_ds = pd.read_csv(config.config_loader.get(config.RAW_FILE_PATH))
+    print(f"Number of records before removing records with Nan value : {len(complaints_ds)}")
+    complaints_ds = complaints_ds.dropna(subset=['Consumer complaint narrative'])
+    complaints_ds = complaints_ds.reset_index(drop=True)
+
+    long_complaints_ds = complaints_ds[complaints_ds['Consumer complaint narrative'].str.len() > 600].copy()
+    long_complaints_ds = long_complaints_ds.reset_index(drop=True)
+    return long_complaints_ds
+
+def split_data(cl, long_complaints_ds, num_of_records = 100000):
+    training_ds = long_complaints_ds[:num_of_records]
+    testing_ds = long_complaints_ds[num_of_records: int(num_of_records * 1.20)]
+    sample_ds = long_complaints_ds[int(num_of_records*1.2):int(num_of_records*1.21)]
+
+    training_ds.to_csv(cl.config_loader.get(cl.TRAINING_FILE_PATH))
+    testing_ds.to_csv(cl.config_loader.get(cl.TEST_FILE_PATH))
+    sample_ds.to_csv(cl.config_loader.get(cl.SAMPLED_FILE_PATH))
 
 if __name__ == "__main__":
     PROJECT = cl.config_loader.get(cl.PROJECT_ID)

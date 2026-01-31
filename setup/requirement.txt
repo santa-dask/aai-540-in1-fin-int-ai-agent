@@ -1,18 +1,13 @@
+#Global Option
+--extra-index-url https://pypi.org/simple
+
 # GCP Client Libraries
 google-cloud-storage
 google-cloud-bigquery
 google-cloud-aiplatform
 bigframes
-# google-cloud-dataflow
 google-cloud-dlp
 
-# LLM & Training (PEFT / QLoRA)
-transformers>=4.49.0
-peft
-bitsandbytes
-accelerate
-datasets
-torch
 
 # Explainability & Evaluation
 shap
@@ -25,3 +20,19 @@ pyarrow
 pyyaml
 tqdm
 python-dotenv
+
+# Core Frameworks
+torch>=2.2.0
+transformers>=4.40.0
+accelerate>=0.27.0
+peft>=0.10.0
+packaging
+ninja
+
+# Data & Quantization
+datasets>=2.18.0
+#bitsandbytes>=0.42.0
+protobuf==4.25.3
+pandas
+scipy
+sentencepiece

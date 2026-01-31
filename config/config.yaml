@@ -12,7 +12,10 @@ data:
   raw_bucket: "cfpb-raw-lake"
   clean_bucket: "cfpb-clean-features"
   weights_bucket: "cfpb-weights-registry"
-  raw_file_path: "data/complaints1.csv"
+  raw_file_path: "./data/complaints.csv"
+  training_file_path: "./data/training_data.csv"
+  testing_file_path: "./data/testing_data.csv"
+  sample_file_path: "./data/sample_data.csv"
   cfpb_api_url: "https://www.consumerfinance.gov/data-research/consumer-complaints/search/api/v1/"
   narrative_field: "complaint_what_happened"
   min_narrative_length: 50
