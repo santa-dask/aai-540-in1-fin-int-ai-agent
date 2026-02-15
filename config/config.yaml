@@ -3,7 +3,7 @@
 # ==========================================
 
 project:
-  id: "cfpb-usd-aai-540"
+  name: "cfpb-usd-aai-540"
   region: "us-central1"
   env: "development" # [development, staging, production]
 
@@ -12,7 +12,7 @@ data:
   raw_bucket: "cfpb-raw-lake"
   clean_bucket: "cfpb-clean-features"
   weights_bucket: "cfpb-weights-registry"
-  raw_file_path: "data/complaints1.csv"
+  raw_file_path: "data/complaints.csv.gz"
   cfpb_api_url: "https://www.consumerfinance.gov/data-research/consumer-complaints/search/api/v1/"
   narrative_field: "complaint_what_happened"
   min_narrative_length: 50

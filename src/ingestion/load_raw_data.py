@@ -13,7 +13,8 @@ from utils import config_loader as cl
 
 def load_to_raw_bucket(project_id, bucket_name, local_file_path):
     """
-    Uploads the local CSV file to the 'raw/' folder in the GCS Data Lake.
+    Uploads the local gzip CSV file to the 'raw/' folder in the GCS Data Lake.
+    Supports both .csv and .csv.gz files.
     """
     # 1. Initialize the GCS Client
     client = storage.Client(project=project_id)
@@ -21,7 +22,7 @@ def load_to_raw_bucket(project_id, bucket_name, local_file_path):
     try:
         bucket = client.get_bucket(bucket_name)
     except Exception as e:
-        print(f"❌ Bucket {bucket_name} not found. Ensure infrastructure setup is run. Error: {e}")
+        print(f"Bucket {bucket_name} not found. Ensure infrastructure setup is run. Error: {e}")
         return
 
     # 2. Define the target 'folder' path
@@ -29,11 +30,17 @@ def load_to_raw_bucket(project_id, bucket_name, local_file_path):
     blob_name = f"raw/{os.path.basename(local_file_path)}"
     blob = bucket.blob(blob_name)
 
-    # 3. Perform the upload
+    # 3. Check if file exists
+    if not os.path.exists(local_file_path):
+        print(f"Error: File not found at {local_file_path}")
+        return
+
+    # 4. Perform the upload
     print(f"⏳ Uploading {local_file_path} to gs://{bucket_name}/{blob_name}...")
+    print(f"   File size: {os.path.getsize(local_file_path) / (1024*1024):.2f} MB")
     
     # upload_from_filename is optimized for large file transfers
-    blob.upload_from_filename(f"{local_file_path}")
+    blob.upload_from_filename(local_file_path)
 
     print(f"✅ Success! File available at: gs://{bucket_name}/{blob_name}")
 
@@ -41,10 +48,15 @@ if __name__ == "__main__":
     # Ensure your environment variable is set
     PROJECT = cl.config_loader.get(cl.PROJECT_ID)
     RAW_BUCKET = f"{PROJECT}-{cl.config_loader.get(cl.RAW_BUCKET)}"
-    RAW_FILE_PATH =  f"../{cl.config_loader.get(cl.RAW_FILE_PATH)}" # Ensure file exists here
+    RAW_FILE_PATH = cl.config_loader.get(cl.RAW_FILE_PATH)
+    
+    # Calculate the actual path from project root
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.abspath(os.path.join(script_dir, '..', '..'))
+    full_file_path = os.path.join(project_root, RAW_FILE_PATH)
 
-    if os.path.exists(RAW_FILE_PATH):
-        load_to_raw_bucket(PROJECT, RAW_BUCKET, "../data/complaints1.csv")
+    if os.path.exists(full_file_path):
+        load_to_raw_bucket(PROJECT, RAW_BUCKET, full_file_path)
     else:
-        print(f"❌ Error: {RAW_FILE_PATH} not found. Please place your dataset in the data/ directory.")
+        print(f"Error: {full_file_path} not found. Please place your dataset in the data/ directory.")
     

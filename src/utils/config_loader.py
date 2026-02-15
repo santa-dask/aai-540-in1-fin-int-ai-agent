@@ -1,21 +1,21 @@
 # src/utils/config_loader.py
 import yaml
 import os
+import subprocess
+import shlex
 from functools import reduce
 import operator
 from dotenv import load_dotenv
 
 # Constants for easy access to common config keys
 PROJECT_ID = 'project.id'
+PROJECT_NAME = 'project.name'
 REGION = 'project.region'
 BQ_DATASET = 'bigquery.dataset'
 RAW_BUCKET = 'data.raw_bucket'
 CLEAN_BUCKET = 'data.clean_bucket'
 WEIGHTS_BUCKET = 'data.weights_bucket'
-RAW_BUCKET='data.raw_bucket'
-CLEAN_BUCKET='data.clean_bucket'
-WEIGHTS_BUCKET='data.weights_bucket'
-RAW_FILE_PATH='data.raw_file_path'
+RAW_FILE_PATH = 'data.raw_file_path'
 
 
 
@@ -60,6 +60,26 @@ class ConfigLoader:
             if 'project' not in self.config:
                 self.config['project'] = {}
             self.config['project']['id'] = gcp_project_env
+
+        # If project.id is not provided but project.name is, try to resolve via gcloud
+        try:
+            project_cfg = self.config.get('project', {})
+            if project_cfg and not project_cfg.get('id') and project_cfg.get('name'):
+                project_name = project_cfg.get('name')
+                # Use gcloud CLI to resolve projectId from project name (requires gcloud and permissions)
+                cmd = [
+                    'gcloud', 'projects', 'list',
+                    '--filter', f'name:{project_name}',
+                    '--format', 'value(projectId)'
+                ]
+                proc = subprocess.run(cmd, capture_output=True, text=True)
+                if proc.returncode == 0:
+                    proj_id = proc.stdout.strip().splitlines()
+                    if proj_id:
+                        self.config['project']['id'] = proj_id[0]
+        except Exception:
+            # If resolution fails, silently continue; callers can handle missing project id.
+            pass
             
     def get(self, key: str, default=None):
         """

@@ -2,7 +2,7 @@ name: finint
 channels:
   - conda-forge
 dependencies:
-  - python=3.10
+  - python=3.13
   - pip
   - numpy
   - pandas
@@ -24,4 +24,5 @@ dependencies:
       - great-expectations
       - typer
       - rich
+      - bigframes
 
