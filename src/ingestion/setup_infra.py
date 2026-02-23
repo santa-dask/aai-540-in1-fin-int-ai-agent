@@ -10,7 +10,7 @@ if src_path not in sys.path:
 from google.cloud import storage, bigquery
 from google.api_core import exceptions
 from google.auth.exceptions import DefaultCredentialsError
-from utils import config_loader as cl
+from util.config_loader import config_loader
 
 def create_gcs_buckets(project_id, location="US"):
     """
@@ -41,12 +41,10 @@ def create_gcs_buckets(project_id, location="US"):
     
     # Use the constants from the config_loader to get the keys
     bucket_keys = [
-        cl.RAW_BUCKET,
-        cl.CLEAN_BUCKET,
-        cl.WEIGHTS_BUCKET
+        "GCS_BUCKET"
     ]
     
-    bucket_names = [cl.config_loader.get(key) for key in bucket_keys]
+    bucket_names = [os.getenv(key) for key in bucket_keys]
 
     for bucket_name in bucket_names:
         if not bucket_name:
@@ -54,6 +52,7 @@ def create_gcs_buckets(project_id, location="US"):
             continue
             
         full_name = f"{project_id}-{bucket_name}"
+        full_name=f"{bucket_name}"
         bucket = client.bucket(full_name)
         
         try:
@@ -67,7 +66,7 @@ def create_gcs_buckets(project_id, location="US"):
         except Exception as e:
             print(f" Failed to create GCS bucket {full_name}: {e}")
 
-def create_bigquery_dataset(project_id, location="US"):
+def create_bigquery_dataset(project_id, location="us-central1"):
     """
     Creates the BigQuery dataset if it does not already exist.
     It reads the dataset name from the configuration file.
@@ -91,7 +90,7 @@ def create_bigquery_dataset(project_id, location="US"):
         print(f" Failed to initialize BigQuery Client: {e}")
         return
     
-    dataset_name = cl.config_loader.get(cl.BQ_DATASET)
+    dataset_name = config_loader.get("bigquery.dataset")
     if not dataset_name:
         print(" Warning: 'bigquery.dataset' not configured in YAML. Skipping BigQuery setup.")
         return
@@ -100,27 +99,27 @@ def create_bigquery_dataset(project_id, location="US"):
     
     try:
         client.get_dataset(dataset_id)  # Make an API request.
-        print(f"BigQuery Dataset already exists: {dataset_id}")
+        print(f"BigQuery Dataset already exists: {dataset_name}")
     except exceptions.NotFound:
         print(f"BigQuery Dataset not found: {dataset_id}. Creating...")
         try:
             dataset = bigquery.Dataset(dataset_id)
             dataset.location = location
             created_dataset = client.create_dataset(dataset, timeout=30)
-            print(f" Created BigQuery Dataset: {created_dataset.full_dataset_id}")
+            print(f" Created BigQuery Dataset: {dataset_name}")
         except exceptions.Forbidden as e:
-            print(f" BigQuery Permission Denied for {dataset_id}: {e}")
+            print(f" BigQuery Permission Denied for {dataset_name}: {e}")
         except Exception as e:
-            print(f" Failed to create BigQuery dataset {dataset_id}: {e}")
+            print(f" Failed to create BigQuery dataset {dataset_name}: {e}")
 
-def  setup_data_lake(project_id, location="US"):
+def  setup_data_lake(project_id, location="us-central1"):
     create_gcs_buckets(project_id, location=location)
     create_bigquery_dataset(project_id, location=location)
 
 if __name__ == "__main__":
     
-    project_id = cl.config_loader.get(cl.PROJECT_ID)
-    region = cl.config_loader.get(cl.REGION)
+    project_id = config_loader.get("PROJECT_ID")
+    region = config_loader.get("project.region")
 
     if not project_id:
         print(" Error: Project ID not found. Check GOOGLE_CLOUD_PROJECT env var or config.yaml.")

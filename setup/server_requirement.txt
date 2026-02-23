@@ -1,0 +1,25 @@
+transformers
+accelerate
+peft
+evaluate
+
+packaging
+ninja
+
+datasets
+bitsandbytes
+
+huggingface_hub
+gcsfs
+fsspec
+google-cloud-storage
+google-cloud-bigquery
+google-cloud-aiplatform
+bigframes
+pandas_gbq
+
+# Utilities
+pyyaml
+tqdm
+python-dotenv
+#pip install --upgrade torch torchvision torchaudio

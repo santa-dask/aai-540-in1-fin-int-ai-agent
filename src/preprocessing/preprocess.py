@@ -10,18 +10,18 @@ if src_path not in sys.path:
     sys.path.append(src_path)
 
 from google.api_core import exceptions
-from utils import config_loader as cl
+from util.config_loader import config_loader
 
 import bigframes.pandas as bpd
 
 def preprocess_raw_to_staging(project_id, dataset_id, bucket_name):
     # Initialize BigFrames options
     bpd.options.bigquery.project = project_id
-    bpd.options.bigquery.location = "US"
+    bpd.options.bigquery.location = config_loader.get("project.region")
 
     # 1. Point to the Raw CSV in the Data Lake (Bronze Layer)
-    gcs_uri = f"gs://{bucket_name}/raw/complaints1.csv"
-    print(f" GCS RAW File Location: {gcs_uri}")
+    gcs_uri = f"gs://{bucket_name}/{config_loader.get('data.raw_file_path')}"
+    #print(f" GCS RAW File Location: {gcs_uri}")
     
     # Create a BigQuery DataFrame directly from the GCS external file
     # This acts as an 'External Table'—no data is moved yet.
@@ -41,10 +41,11 @@ def preprocess_raw_to_staging(project_id, dataset_id, bucket_name):
     staging_table_id = f"{project_id}.{dataset_id}.stg_complaints"
     df_clean.to_gbq(staging_table_id, if_exists="replace")
     
-    print(f"✅ Preprocessing complete. Staging table created: {staging_table_id}")
+    print(f"Preprocessing complete. Staging table created: {dataset_id}.stg_complaints")
 
-def preprocess_data(config):
-    complaints_ds = pd.read_csv(config.config_loader.get(config.RAW_FILE_PATH))
+def preprocess_data():
+    gcs_uri = f"gs://{config_loader.get('GCS_BUCKET')}/{config_loader.get('data.raw_file_path')}"
+    complaints_ds = pd.read_csv(gcs_uri)
     print(f"Number of records before removing records with Nan value : {len(complaints_ds)}")
     complaints_ds = complaints_ds.dropna(subset=['Consumer complaint narrative'])
     complaints_ds = complaints_ds.reset_index(drop=True)
@@ -53,16 +54,27 @@ def preprocess_data(config):
     long_complaints_ds = long_complaints_ds.reset_index(drop=True)
     return long_complaints_ds
 
-def split_data(cl, long_complaints_ds, num_of_records = 100000):
+def split_data( long_complaints_ds, num_of_records = 100000):
     training_ds = long_complaints_ds[:num_of_records]
     testing_ds = long_complaints_ds[num_of_records: int(num_of_records * 1.20)]
     sample_ds = long_complaints_ds[int(num_of_records*1.2):int(num_of_records*1.21)]
 
-    training_ds.to_csv(cl.config_loader.get(cl.TRAINING_FILE_PATH))
-    testing_ds.to_csv(cl.config_loader.get(cl.TEST_FILE_PATH))
-    sample_ds.to_csv(cl.config_loader.get(cl.SAMPLED_FILE_PATH))
+    # Get the project directory, assuming it's correctly set as an environment variable
+    project_dir = os.getenv('PROJECT_DIR', '/content/aai-540-in1-fin-int-ai-agent')
+
+    # Construct the path to the 'data' directory
+    data_dir = os.path.join(project_dir, 'data')
+
+    # Create the 'data' directory if it does not exist
+    if not os.path.exists(data_dir):
+      os.makedirs(data_dir)
+      print(f"Created directory: {data_dir}")
+
+    training_ds.to_csv(os.path.join(project_dir, config_loader.get("data.training_file_path")))
+    testing_ds.to_csv(os.path.join(project_dir,config_loader.get("data.testing_file_path")))
+    sample_ds.to_csv(os.path.join(project_dir,config_loader.get("data.sample_file_path")))
 
 if __name__ == "__main__":
-    PROJECT = cl.config_loader.get(cl.PROJECT_ID)
-    RAW_BUCKET = f"{PROJECT}-{cl.config_loader.get(cl.RAW_BUCKET)}"
+    PROJECT = config_loader.get("PROJECT_ID")
+    RAW_BUCKET = config_loader.get("GCS_BUCKET")
     preprocess_raw_to_staging(PROJECT, "cfpb_analysis", RAW_BUCKET)
